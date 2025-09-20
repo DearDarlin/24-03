@@ -1,10 +1,8 @@
 using System;
 using System.IO;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Collections.Generic;
 
 [Serializable]
-
 public class Article
 {
     public string Title { get; set; }
@@ -13,21 +11,19 @@ public class Article
 
     public override string ToString()
     {
-        return $"Article: {Title}, Symbols: {SymbolCount}, Preview: {Preview}";
+        return $"   Article: {Title}, Symbols: {SymbolCount}, Preview: {Preview}";
     }
 }
+
 public class Journal
 {
     public string Title { get; set; }
     public string Publisher { get; set; }
     public DateTime PublicationDate { get; set; }
     public int Pages { get; set; }
-
     public List<Article> Articles { get; set; } = new List<Article>();
-    public Journal()
-    {
 
-    }
+    public Journal() { }
 
     public Journal(string title, string publisher, DateTime publicationDate, int pages)
     {
@@ -39,21 +35,20 @@ public class Journal
 
     public override string ToString()
     {
-        string articlesInfo = Articles.Count == 0 ? "No articles" : string.Join("\n   ", Articles);
+        string articlesInfo = Articles.Count == 0 ? "   No articles" : string.Join("\n", Articles);
         return $"Title: {Title}, Publisher: {Publisher}, " +
-               $"Publication Date: {PublicationDate.ToShortDateString()}, Pages: {Pages}\n   {articlesInfo}";
+               $"Date: {PublicationDate.ToShortDateString()}, Pages: {Pages}\n{articlesInfo}";
     }
-
 }
 
 class Program
 {
     static void Main()
     {
-        List<Journal> journals = new List<Journal>();
-
         Console.Write("How many journals do you want to enter? ");
         int journalCount = int.Parse(Console.ReadLine());
+
+        Journal[] journals = new Journal[journalCount];
 
         for (int i = 0; i < journalCount; i++)
         {
@@ -70,7 +65,8 @@ class Program
 
             Console.Write("Enter number of pages: ");
             int pages = int.Parse(Console.ReadLine());
-            Journal journal = new Journal(title, publisher, publicationDate, pages);
+
+            journals[i] = new Journal(title, publisher, publicationDate, pages);
 
             Console.Write("How many articles in this journal? ");
             int articleCount = int.Parse(Console.ReadLine());
@@ -88,30 +84,32 @@ class Program
                 Console.Write("  Preview: ");
                 string preview = Console.ReadLine();
 
-                journal.Articles.Add(new Article
+                journals[i].Articles.Add(new Article
                 {
                     Title = artTitle,
                     SymbolCount = symbolCount,
                     Preview = preview
                 });
             }
-
-            journals.Add(journal);
         }
-        string filePath = "journals.json";
-        string json = JsonSerializer.Serialize(journals, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(filePath, json);
+
+        string filePath = "journals.txt";
+        using (StreamWriter writer = new StreamWriter(filePath))
+        {
+            foreach (var j in journals)
+            {
+                writer.WriteLine(j);
+                writer.WriteLine(new string('-', 50));
+            }
+        }
+
         Console.WriteLine($"\nJournals saved to {filePath}");
 
-        string loadedJson = File.ReadAllText(filePath);
-        List<Journal> loadedJournals = JsonSerializer.Deserialize<List<Journal>>(loadedJson);
-
-        Console.WriteLine("\nLoaded journals:");
-        foreach (var j in loadedJournals)
+        Console.WriteLine("\nLoaded journals from file:");
+        string[] lines = File.ReadAllLines(filePath);
+        foreach (var line in lines)
         {
-            Console.WriteLine(j);
+            Console.WriteLine(line);
         }
-
-
     }
-    }﻿
+}
